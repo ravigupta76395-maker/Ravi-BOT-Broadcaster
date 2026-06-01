@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TG Broadcast</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --card: #16161f; --border: #2a2a3a;
+    --accent: #00e5ff; --accent2: #7c5cfc; --success: #00ff88;
+    --danger: #ff4560; --warn: #ffb800; --text: #e8e8f0; --muted: #6b6b80;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  .glow-orb { position: fixed; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,252,0.12) 0%, transparent 70%); top: -200px; right: -200px; pointer-events: none; z-index: 0; animation: orb-drift 8s ease-in-out infinite alternate; }
+  .glow-orb2 { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 70%); bottom: -100px; left: -100px; pointer-events: none; z-index: 0; animation: orb-drift 10s ease-in-out infinite alternate-reverse; }
+  @keyframes orb-drift { from { transform: translate(0,0); } to { transform: translate(40px,40px); } }
+  .container { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; position: relative; z-index: 1; }
+  .header { text-align: center; margin-bottom: 48px; animation: fade-down 0.6s ease both; }
+  .header-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.2); border-radius: 100px; padding: 6px 16px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+  .header-badge::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)} }
+  h1 { font-size: clamp(32px,6vw,56px); font-weight: 800; line-height: 1; background: linear-gradient(135deg,#fff 30%,var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -1px; }
+  .subtitle { color: var(--muted); margin-top: 10px; font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; position: relative; overflow: hidden; animation: fade-up 0.5s ease both; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent); }
+  @keyframes fade-down { from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)} }
+  @keyframes fade-up { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
+  .card-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .input-group { position: relative; margin-bottom: 16px; }
+  .input-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 8px; font-family: 'Space Mono', monospace; }
+  input[type="text"], input[type="password"], textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; padding: 14px 16px; outline: none; transition: border-color .2s, box-shadow .2s; }
+  input[type="text"]:focus, input[type="password"]:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,.1); }
+  textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .token-wrap { position: relative; }
+  .token-wrap input { padding-right: 48px; }
+  .eye-btn { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; transition: color .2s; }
+  .eye-btn:hover { color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 24px; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: all .2s; letter-spacing: .5px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,.05); }
+  .btn-success { background: var(--success); color: #000; font-weight: 800; }
+  .btn-success:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,136,.3); }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .users-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .users-count { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); }
+  .users-count span { color: var(--success); font-size: 16px; font-weight: 700; }
+  .users-grid { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
+  .users-grid::-webkit-scrollbar { width: 4px; }
+  .users-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .user-item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; transition: border-color .2s; }
+  .user-item.sent { border-color: rgba(0,255,136,.3); }
+  .user-item.failed { border-color: rgba(255,69,96,.3); }
+  .user-item.sending { border-color: rgba(0,229,255,.3); }
+  .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,var(--accent2),var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #000; flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-id { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .user-status { font-size: 18px; flex-shrink: 0; }
+  .progress-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; display: none; }
+  .progress-card.active { display: block; animation: fade-up .3s ease both; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .progress-title { font-weight: 700; font-size: 14px; }
+  .progress-nums { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--muted); }
+  .progress-nums strong { color: var(--accent); }
+  .progress-bar-track { background: var(--surface); border-radius: 100px; height: 6px; overflow: hidden; margin-bottom: 16px; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg,var(--accent2),var(--accent)); border-radius: 100px; transition: width .4s ease; width: 0%; box-shadow: 0 0 10px rgba(0,229,255,.5); }
+  .progress-stats { display: flex; gap: 20px; }
+  .stat-pill { display: flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-success { background: var(--success); } .dot-fail { background: var(--danger); } .dot-pending { background: var(--warn); }
+  .alert { padding: 14px 18px; border-radius: 10px; font-size: 13px; display: none; margin-bottom: 16px; animation: fade-up .3s ease; }
+  .alert.show { display: flex; align-items: center; gap: 10px; }
+  .alert-success { background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.25); color: var(--success); }
+  .alert-error { background: rgba(255,69,96,.08); border: 1px solid rgba(255,69,96,.25); color: var(--danger); }
+  .alert-info { background: rgba(0,229,255,.08); border: 1px solid rgba(0,229,255,.25); color: var(--accent); }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.2); border-top-color: currentColor; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .char-row { display: flex; justify-content: flex-end; margin-top: 6px; }
+  .char-count { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+  .char-count.warn { color: var(--warn); }
+  .empty-state { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+  .done-banner { display: none; text-align: center; padding: 20px; background: rgba(0,255,136,.05); border: 1px solid rgba(0,255,136,.2); border-radius: 12px; margin-top: 16px; }
+  .done-banner.show { display: block; animation: fade-up .4s ease; }
+  .done-banner .big { font-size: 32px; margin-bottom: 8px; }
+  .done-banner p { color: var(--success); font-weight: 700; font-size: 15px; }
+  .done-banner small { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; }
+  @media(max-width:500px){.btn-row{flex-direction:column}.btn{width:100%}}
+</style>
+</head>
+<body>
+<div class="glow-orb"></div>
+<div class="glow-orb2"></div>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge">Telegram Broadcast</div>
+    <h1>BROADCAST<br>PANEL</h1>
+    <p class="subtitle">Apne sare users ko ek saath message bhejo</p>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card">
+    <div class="card-label">Step 01 — Bot Token</div>
+    <div class="input-group">
+      <label>TELEGRAM BOT TOKEN</label>
+      <div class="token-wrap">
+        <input type="password" id="botToken" placeholder="1234567890:ABCdef..." />
+        <button class="eye-btn" onclick="toggleToken()">👁</button>
+      </div>
+    </div>
+    <div id="tokenAlert" class="alert"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" id="fetchBtn" onclick="fetchUsers()">
+        <span id="fetchIcon">⚡</span> Users Fetch Karo
+      </button>
+      <button class="btn btn-outline" onclick="clearAll()">🗑 Reset</button>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card" id="usersCard" style="display:none">
+    <div class="card-label">Step 02 — Connected Users</div>
+    <div class="users-header">
+      <div class="users-count">Total: <span id="totalCount">0</span> users</div>
+      <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="fetchUsers()">🔄 Refresh</button>
+    </div>
+    <div class="users-grid" id="usersList"></div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="card" id="messageCard" style="display:none">
+    <div class="card-label">Step 03 — Message</div>
+    <div class="input-group">
+      <label>BROADCAST MESSAGE</label>
+      <textarea id="msgText" placeholder="Yahan apna message likho..." oninput="updateCharCount()"></textarea>
+      <div class="char-row"><span class="char-count" id="charCount">0 / 4096</span></div>
+    </div>
+    <div id="msgAlert" class="alert"></div>
+    <div class="btn-row">
+      <button class="btn btn-success" id="broadcastBtn" onclick="startBroadcast()">📡 Broadcast Karo</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-card" id="progressCard">
+    <div class="progress-top">
+      <div class="progress-title">📡 Broadcast Ho Raha Hai...</div>
+      <div class="progress-nums"><strong id="doneCount">0</strong> / <span id="totalSend">0</span></div>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressBar"></div></div>
+    <div class="progress-stats">
+      <div class="stat-pill"><div class="stat-dot dot-success"></div><span id="sentCount">0 Bheja</span></div>
+      <div class="stat-pill"><div class="stat-dot dot-fail"></div><span id="failCount">0 Failed</span></div>
+      <div class="stat-pill"><div class="stat-dot dot-pending"></div><span id="pendCount">0 Pending</span></div>
+    </div>
+    <div class="done-banner" id="doneBanner">
+      <div class="big">🎉</div>
+      <p>Broadcast Complete!</p>
+      <small id="summaryText"></small>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = "http://localhost:3000";
+  let users = [];
+  let isBroadcasting = false;
+
+  function toggleToken() {
+    const inp = document.getElementById('botToken');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  function showAlert(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = `alert show alert-${type}`;
+    el.innerHTML = (type==='error'?'❌':type==='success'?'✅':'ℹ️') + ' ' + msg;
+  }
+  function hideAlert(id) { document.getElementById(id).className = 'alert'; }
+
+  function updateCharCount() {
+    const len = document.getElementById('msgText').value.length;
+    const el = document.getElementById('charCount');
+    el.textContent = `${len} / 4096`;
+    el.className = len > 3800 ? 'char-count warn' : 'char-count';
+  }
+
+  async function fetchUsers() {
+    const token = document.getElementById('botToken').value.trim();
+    if (!token) { showAlert('tokenAlert','error','Bot Token daalo pehle!'); return; }
+    hideAlert('tokenAlert');
+
+    const btn = document.getElementById('fetchBtn');
+    const icon = document.getElementById('fetchIcon');
+    btn.disabled = true;
+    icon.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const res = await fetch(`${API}/api/getUsers?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+
+      if (!data.ok) {
+        showAlert('tokenAlert','error', data.error || 'Kuch galat hua!');
+        return;
+      }
+
+      users = data.users.map(u => ({ ...u, status: 'pending' }));
+      renderUsers();
+
+      document.getElementById('usersCard').style.display = 'block';
+      document.getElementById('messageCard').style.display = users.length > 0 ? 'block' : 'none';
+
+      if (users.length === 0) {
+        showAlert('tokenAlert','info','Koi user nahi mila. Users ko /start bhejwao pehle.');
+      } else {
+        showAlert('tokenAlert','success', `${users.length} users mil gaye!`);
+      }
+    } catch(e) {
+      showAlert('tokenAlert','error','Server se connect nahi ho pa raha. Kya server.js chal raha hai? (node server.js)');
+    } finally {
+      btn.disabled = false;
+      icon.innerHTML = '⚡';
+    }
+  }
+
+  function renderUsers() {
+    const list = document.getElementById('usersList');
+    document.getElementById('totalCount').textContent = users.length;
+    if (users.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">👥</div>Koi user nahi mila abhi</div>';
+      return;
+    }
+    list.innerHTML = users.map(u => `
+      <div class="user-item ${u.status}" id="user-${u.id}">
+        <div class="user-avatar">${u.name.charAt(0).toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${esc(u.name)}</div>
+          <div class="user-id">ID: ${u.id}${u.username ? ' · @'+u.username : ''}</div>
+        </div>
+        <div class="user-status" id="status-${u.id}">⏳</div>
+      </div>
+    `).join('');
+  }
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function startBroadcast() {
+    if (isBroadcasting) return;
+    const token = document.getElementById('botToken').value.trim();
+    const text = document.getElementById('msgText').value.trim();
+    if (!text) { showAlert('msgAlert','error','Message likhna toh padega!'); return; }
+    if (users.length === 0) { showAlert('msgAlert','error','Koi user nahi hai!'); return; }
+    hideAlert('msgAlert');
+
+    isBroadcasting = true;
+    document.getElementById('broadcastBtn').disabled = true;
+    users.forEach(u => { u.status = 'pending'; });
+    renderUsers();
+
+    const pc = document.getElementById('progressCard');
+    pc.classList.add('active');
+    document.getElementById('doneBanner').className = 'done-banner';
+    document.getElementById('totalSend').textContent = users.length;
+    document.getElementById('pendCount').textContent = users.length + ' Pending';
+    document.getElementById('doneCount').textContent = '0';
+    document.getElementById('sentCount').textContent = '0 Bheja';
+    document.getElementById('failCount').textContent = '0 Failed';
+    document.getElementById('progressBar').style.width = '0%';
+
+    let sent = 0, failed = 0;
+
+    for (let i = 0; i < users.length; i++) {
+      const u = users[i];
+      const itemEl = document.getElementById(`user-${u.id}`);
+      const statusEl = document.getElementById(`status-${u.id}`);
+      if (itemEl) { itemEl.className = 'user-item sending'; statusEl.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>'; }
+
+      try {
+        const r = await fetch(`${API}/api/send`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ token, chat_id: u.id, text })
+        });
+        const d = await r.json();
+        if (d.ok) { sent++; u.status='sent'; if(itemEl){itemEl.className='user-item sent';statusEl.textContent='✅';} }
+        else { failed++; u.status='failed'; if(itemEl){itemEl.className='user-item failed';statusEl.textContent='❌';} }
+      } catch { failed++; u.status='failed'; if(itemEl){itemEl.className='user-item failed';statusEl.textContent='❌';} }
+
+      const done = sent + failed;
+      document.getElementById('progressBar').style.width = Math.round(done/users.length*100)+'%';
+      document.getElementById('doneCount').textContent = done;
+      document.getElementById('sentCount').textContent = sent+' Bheja';
+      document.getElementById('failCount').textContent = failed+' Failed';
+      document.getElementById('pendCount').textContent = (users.length-done)+' Pending';
+
+      await new Promise(r => setTimeout(r, 100)); // rate limit se bachao
+    }
+
+    document.getElementById('summaryText').textContent = `${sent} bheja · ${failed} failed · ${users.length} total`;
+    document.getElementById('doneBanner').className = 'done-banner show';
+    document.getElementById('broadcastBtn').disabled = false;
+    isBroadcasting = false;
+  }
+
+  function clearAll() {
+    document.getElementById('botToken').value = '';
+    document.getElementById('msgText').value = '';
+    users = [];
+    document.getElementById('usersCard').style.display = 'none';
+    document.getElementById('messageCard').style.display = 'none';
+    document.getElementById('progressCard').classList.remove('active');
+    hideAlert('tokenAlert'); hideAlert('msgAlert');
+    updateCharCount(); isBroadcasting = false;
+  }
+</script>
+</body>
+</html>
